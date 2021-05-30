@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <gtk/gtk.h>
 
 static void print_hello(GtkWidget *widget, gpointer data) {
@@ -17,9 +14,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     button = gtk_button_new_with_label("Hello World");
     g_signal_connect(button, "clicked", G_CALLBACK (print_hello), NULL);
-    gtk_container_add(GTK_CONTAINER(window), button);
+    gtk_window_set_child(GTK_WINDOW(window), button);
 
-    gtk_widget_show_all(GTK_WIDGET(window));
+    gtk_window_present(GTK_WIDGET(window));
 }
 
 int main(int argc, char **argv) {
