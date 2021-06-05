@@ -78,15 +78,12 @@ static void CreateNotebook(GtkWidget *window,
     /* --- Add notebook to vbox --- */
     gtk_box_pack_start(GTK_BOX(box1), notebook, TRUE, TRUE, 0);
 
-    // todo : faire des fonctions de création des pages
-
     /* --- Add pages to the notebook --- */
     widget = AddPage(notebook, createFrameLockScreen(), "LockScreen");
-    // widget = AddPage(notebook, createFrameMenu(), "Menu");
-    // widget = AddPage(notebook, createFrameSearch(), "Recherche");
+    widget = AddPage(notebook, createFrameMenu(), "Menu");
+    widget = AddPage(notebook, createFrameSearch(), "Recherche");
 
     /* --- Show everything. --- */
-    // gtk_widget_show_all(window);
     gtk_widget_show_all(window);
 }
 
