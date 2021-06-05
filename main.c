@@ -19,7 +19,7 @@ GtkWidget *notebook;
 GtkWidget *frameSearch;
 GtkWidget *frameLockScreen;
 GtkWidget *frameMenu;
-
+// source : https://github.com/steshaw/gtk-examples/blob/master/ch14.clist.tree.tab/notebook/notebook.c
 void CreateNotebookWindow(char *szTitle, GtkPositionType pos)
 {
     GtkWidget *window;
@@ -39,6 +39,7 @@ void CreateNotebookWindow(char *szTitle, GtkPositionType pos)
     /* --- Create notebook --- */
     CreateNotebook(window, pos);
 }
+// source : https://github.com/steshaw/gtk-examples/blob/master/ch14.clist.tree.tab/notebook/notebook.c
 /*
  * CreateNotebook
  *
@@ -144,7 +145,7 @@ static GtkWidget *createFrameLockScreen()
 // frame callbacks
 static void unlock_screen(GtkWidget *widget, gpointer data)
 {
-    //envoyer acquisition empreinte
+    //todo here envoyer acquisition empreinte
     //si NOK try again
     //si OK :
     change_page(NULL, frameMenu);
