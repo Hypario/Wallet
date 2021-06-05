@@ -1,0 +1,12 @@
+{
+    "all": [
+        {
+            "name": "auchan",
+            "path": "test.jpg"
+        },
+        {
+            "name": "auchan2",
+            "path": "test.jpg"
+        }
+    ]
+}
