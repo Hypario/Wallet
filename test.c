@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
+GObject *p_builder = NULL;
+
 static void cb_ok(GtkWidget *p_wid, gpointer p_data)
 {
 	GtkWidget *p_dialog = NULL;
@@ -25,9 +27,15 @@ static void cb_quit(GtkWidget *p_wid, gpointer p_data)
 	gtk_main_quit();
 }
 
+static void next_page(GtkWidget *p_wid, gpointer p_data) 
+{
+	GObject *p_notebook = gtk_builder_get_object(p_builder, "Notebook");
+
+	gtk_notebook_next_page((GtkNotebook *)p_notebook);
+}
+
 int main(int argc, char **argv)
 {
-	GtkBuilder *p_builder = NULL;
 	GError *p_err = NULL;
 
 	/* Initialisation de GTK+ */
@@ -48,6 +56,7 @@ int main(int argc, char **argv)
 			GObject *p_button = gtk_builder_get_object(p_builder, "button");
 
 			g_signal_connect(p_win, "destroy", G_CALLBACK(cb_quit), NULL);
+			g_signal_connect(p_button, "clicked", G_CALLBACK(next_page), NULL);
 
 			gtk_widget_show_all(GTK_WIDGET(p_win));
 			gtk_main();
