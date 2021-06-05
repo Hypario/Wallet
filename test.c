@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <gtk/gtk.h>
 
-GObject *p_builder = NULL;
+GtkBuilder *p_builder = NULL;
 
 static void cb_ok(GtkWidget *p_wid, gpointer p_data)
 {
@@ -27,11 +27,14 @@ static void cb_quit(GtkWidget *p_wid, gpointer p_data)
 	gtk_main_quit();
 }
 
-static void next_page(GtkWidget *p_wid, gpointer p_data) 
-{
-	GObject *p_notebook = gtk_builder_get_object(p_builder, "Notebook");
+static void display_menu(GtkButton button, gpointer p_data) {
+	set_page(1);
+}
 
-	gtk_notebook_next_page((GtkNotebook *)p_notebook);
+void set_page(gint page_num)
+{
+	GtkNotebook *p_notebook = (GtkNotebook *) gtk_builder_get_object(p_builder, "Notebook");
+	gtk_notebook_set_current_page(p_notebook, page_num);
 }
 
 int main(int argc, char **argv)
@@ -56,9 +59,9 @@ int main(int argc, char **argv)
 			GObject *p_button = gtk_builder_get_object(p_builder, "button");
 
 			g_signal_connect(p_win, "destroy", G_CALLBACK(cb_quit), NULL);
-			g_signal_connect(p_button, "clicked", G_CALLBACK(next_page), NULL);
+			g_signal_connect(p_button, "clicked", G_CALLBACK(display_menu), NULL);
 
-			gtk_widget_show_all(GTK_WIDGET(p_win));
+			gtk_widget_show_all((GtkWidget *) p_win);
 			gtk_main();
 		}
 		else

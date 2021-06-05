@@ -31,7 +31,7 @@
         </child>
         <child>
           <object class="GtkButton">
-            <property name="label" translatable="yes">button</property>
+            <property name="label" translatable="yes">un boutton</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
