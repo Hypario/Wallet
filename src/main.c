@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 	if (p_builder != NULL)
 	{
 		/* Chargement du XML dans p_builder */
-		gtk_builder_add_from_file(p_builder, "test.glade", &p_err);
+		gtk_builder_add_from_file(p_builder, "views/architecture.glade", &p_err);
 
 		if (p_err == NULL)
 		{
