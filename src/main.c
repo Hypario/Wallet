@@ -7,16 +7,113 @@
 
 GObject *p_builder = NULL;
 
+
+static void click_keyboard(GtkWidget *widget, gpointer key);
+static void reset_sensitiveness_keyboard();
+static void set_sensitive_key(char key, gboolean sensitive);
+static void setCardPage(GtkWidget *widget, gpointer card);
 static GtkWidget *createButton(char *label, GCallback callback, gpointer data)
 {
-	GtkWidget *buttonBox;
+	// GtkWidget *buttonBox;
 	GtkWidget *button;
-	buttonBox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-
+	// buttonBox = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 	button = gtk_button_new_with_label(label);
+
 	g_signal_connect(button, "clicked", callback, data);
-	gtk_container_add(GTK_CONTAINER(buttonBox), button);
-	return buttonBox;
+	// gtk_container_add(GTK_CONTAINER(buttonBox), button);
+	// return buttonBox;
+	return button;
+}
+static gboolean list_filter_cards(GtkListBoxRow *row, gpointer len)
+{
+	if (len == -1)
+		return true;
+	for (int i = 0; i <= len; i++)
+	{
+		GObject *p_searchText = gtk_builder_get_object(p_builder, "searchText");
+		if (toupper(gtk_button_get_label(gtk_bin_get_child(row))[i]) != gtk_label_get_text(p_searchText)[i])
+			return false;
+	}
+	return true;
+}
+static void click_keyboard(GtkWidget *widget, gpointer key)
+{
+	GObject *p_searchText = gtk_builder_get_object(p_builder, "searchText");
+	char *str = gtk_label_get_text(p_searchText);
+	size_t len = strlen(str);
+	char *concat = (char *)malloc(len + 2);
+	snprintf(concat, len + 2, "%s%c\0", str, key);
+	gtk_label_set_text(p_searchText, concat);
+	reset_sensitiveness_keyboard();
+
+	json_error_t error;
+	size_t index;
+	json_t *value;
+	json_array_foreach(json_object_get(json_load_file("Cards/cards.json", 0, &error), "all"), index, value)
+	{
+		gboolean correct = true;
+		for (int i = 0; i <= len; i++)
+		{
+			if (toupper(json_string_value(json_object_get(value, "name"))[i]) != concat[i])
+			{
+				correct = false;
+				break;
+			}
+		}
+		if (correct)
+		{
+			set_sensitive_key(json_string_value(json_object_get(value, "name"))[len + 1], TRUE);
+		}
+	};
+	gtk_list_box_set_filter_func(gtk_builder_get_object(p_builder, "ListCards"), (GtkListBoxFilterFunc)list_filter_cards, len, NULL);
+
+	gtk_widget_set_sensitive(gtk_builder_get_object(p_builder, "keyboard_reset"), TRUE);
+}
+static void click_keyboard_reset()
+{
+	reset_sensitiveness_keyboard();
+	GObject *p_searchText = gtk_builder_get_object(p_builder, "searchText");
+	char *str = gtk_label_get_text(p_searchText);
+	gtk_label_set_text(p_searchText, "");
+	gtk_widget_set_sensitive(gtk_builder_get_object(p_builder, "keyboard_reset"), FALSE);
+	json_error_t error;
+	size_t index;
+	json_t *value;
+	json_array_foreach(json_object_get(json_load_file("Cards/cards.json", 0, &error), "all"), index, value)
+	{
+		set_sensitive_key(json_string_value(json_object_get(value, "name"))[0], TRUE);
+	};
+	gtk_list_box_set_filter_func(gtk_builder_get_object(p_builder, "ListCards"), (GtkListBoxFilterFunc)list_filter_cards, -1, NULL);
+	// faire cet init à chaque switch_page if page = search?
+}
+
+static void set_sensitive_key(char key, gboolean sensitive)
+{
+	char identifier[11] = "keyboard_";
+	identifier[strlen(identifier)] = toupper(key);
+	GObject *p_button_keyboard_i = gtk_builder_get_object(p_builder, identifier);
+	gtk_widget_set_sensitive(p_button_keyboard_i, sensitive);
+}
+static void reset_sensitiveness_keyboard()
+{
+	char alphabet[27] = "AZERTYUIOPQSDFGHJKLMWXCVBN";
+	for (int i = 0; i < 26; i++)
+	{
+		set_sensitive_key(alphabet[i], FALSE);
+	}
+}
+static void setupKeyboard()
+{
+	char alphabet[27] = "AZERTYUIOPQSDFGHJKLMWXCVBN";
+	for (int i = 0; i < 26; i++)
+	{
+		char identifier[11] = "keyboard_";
+		identifier[strlen(identifier)] = alphabet[i];
+		GObject *p_button_keyboard_i = gtk_builder_get_object(p_builder, identifier);
+		g_signal_connect(p_button_keyboard_i, "clicked", G_CALLBACK(click_keyboard), alphabet[i]);
+	}
+	GObject *p_button_keyboard_reset = gtk_builder_get_object(p_builder, "keyboard_reset");
+	g_signal_connect(p_button_keyboard_reset, "clicked", G_CALLBACK(click_keyboard_reset), NULL);
 }
 
 static void change_page(GtkWidget *widget, gpointer page)
@@ -25,7 +122,9 @@ static void change_page(GtkWidget *widget, gpointer page)
 	gtk_notebook_set_current_page(p_notebook, gtk_notebook_page_num(p_notebook, page));
 }
 
-void setCardPage(GtkWidget *widget, gpointer card)
+
+static void setCardPage(GtkWidget *widget, gpointer card)
+
 {
 	GObject *p_ImageCard = gtk_builder_get_object(p_builder, "ImageCard");
 	GObject *p_LabelCard = gtk_builder_get_object(p_builder, "LabelCard");
@@ -185,7 +284,7 @@ int main(int argc, char **argv)
 			GObject *p_ListCards = gtk_builder_get_object(p_builder, "ListCards");
 
 			g_signal_connect(p_win, "destroy", G_CALLBACK(cb_quit), NULL);
-
+			setupKeyboard();
 			set_navigation();
 
 			json_error_t error;
@@ -193,7 +292,10 @@ int main(int argc, char **argv)
 			json_t *value;
 			json_array_foreach(json_object_get(json_load_file("Cards/cards.json", 0, &error), "all"), index, value)
 			{
-				gtk_list_box_prepend(p_ListCards, createButton(json_string_value(json_object_get(value, "name")), G_CALLBACK(setCardPage), value));
+
+				GObject *button = createButton(json_string_value(json_object_get(value, "name")), G_CALLBACK(setCardPage), value);
+				gtk_list_box_prepend(p_ListCards, button);
+				set_sensitive_key(json_string_value(json_object_get(value, "name"))[0], TRUE);
 			};
 
 			lock(); // handle fingerprints
