@@ -147,6 +147,10 @@ void deleteFP(String id) {
   Serial.println(F("{\"status\": true, \"message\": \"FingerPrint deleted\", \"statusmsg\":\"fp_delete_ok\"}"));
 }
 
+int getNbEmpreintes() {
+  return fingerprint.getEnrollCount();
+}
+
 
 /*
  * Gestion d'une requête de type "fingerprint"
@@ -199,6 +203,10 @@ void handleFP(String action, String value) {
     } else if (action.equals("delete")) {
       deleteFP(value);
       return;
+   } else if (action.equals("get_nb")) {
+      Serial.print(F("{\"status\": true, \"message\": \"[FP] OK\", \"data\":"));
+      Serial.print(getNbEmpreintes());
+      Serial.println(F(", \"statusmsg\":\"ok\"}"));
    }
   else {
     Serial.print(F("{\"status\": false, \"message\": \"[FP] Action Undefined : "));
@@ -211,7 +219,7 @@ void handleFP(String action, String value) {
 void handleBat(String action, String value) {
   if (action.equals("get_percent")) {
         Serial.print(F("{\"status\": true, \"message\": \"[BAT] Bat Chg\", \"data\":"));
-         Serial.print(0);
+         Serial.print(50);
          Serial.println(F(", \"statusmsg\":\"ok\"}"));
   } else {
     Serial.print(F("{\"status\": false, \"message\": \"[BAT] Action Undefined : "));
