@@ -34,7 +34,9 @@ setCardPage(GtkWidget *widget, gpointer card)
 	strcat(fullPath, path);
 	char *name = json_string_value(json_object_get(card, "name"));
 
-	gtk_image_set_from_file(p_ImageCard, fullPath);
+	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(fullPath, NULL);
+	pixbuf = gdk_pixbuf_scale_simple(pixbuf, 640, 480, GDK_INTERP_BILINEAR);
+	gtk_image_set_from_pixbuf(p_ImageCard, pixbuf);
 	gtk_label_set_label(p_LabelCard, name);
 
 	change_page(gtk_builder_get_object(p_builder, "Notebook"), p_cardPage);
