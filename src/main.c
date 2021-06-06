@@ -7,6 +7,7 @@
 
 GObject *p_builder = NULL;
 
+
 static void click_keyboard(GtkWidget *widget, gpointer key);
 static void reset_sensitiveness_keyboard();
 static void set_sensitive_key(char key, gboolean sensitive);
@@ -114,13 +115,16 @@ static void setupKeyboard()
 	GObject *p_button_keyboard_reset = gtk_builder_get_object(p_builder, "keyboard_reset");
 	g_signal_connect(p_button_keyboard_reset, "clicked", G_CALLBACK(click_keyboard_reset), NULL);
 }
+
 static void change_page(GtkWidget *widget, gpointer page)
 {
 	GObject *p_notebook = gtk_builder_get_object(p_builder, "Notebook");
 	gtk_notebook_set_current_page(p_notebook, gtk_notebook_page_num(p_notebook, page));
 }
 
+
 static void setCardPage(GtkWidget *widget, gpointer card)
+
 {
 	GObject *p_ImageCard = gtk_builder_get_object(p_builder, "ImageCard");
 	GObject *p_LabelCard = gtk_builder_get_object(p_builder, "LabelCard");
@@ -288,6 +292,7 @@ int main(int argc, char **argv)
 			json_t *value;
 			json_array_foreach(json_object_get(json_load_file("Cards/cards.json", 0, &error), "all"), index, value)
 			{
+
 				GObject *button = createButton(json_string_value(json_object_get(value, "name")), G_CALLBACK(setCardPage), value);
 				gtk_list_box_prepend(p_ListCards, button);
 				set_sensitive_key(json_string_value(json_object_get(value, "name"))[0], TRUE);
