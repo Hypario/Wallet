@@ -18,6 +18,7 @@
 #include <sys/ioctl.h>
 #include <stdint.h>
 int main_fd;
+int readcpt = 0;
 //  Methods for serial comm up to line 149
 int serialport_init(const char* serialport, int baud)
 {
@@ -148,19 +149,23 @@ int serialport_flush(int fd)
 }
 
 
-char * getResponseCode() {
+char * getResponseCode(int fd) {
 	int i;
-    char buffer[100];	
+    char buffer[256];	
     //	lecture d'une ligne
-	serialport_read_until(main_fd, buffer, '\r', 99, 10000);
+	serialport_read_until(fd, buffer, '\n', 255, 10000);
     // suppression de la fin de ligne
-    for (i=0 ; buffer[i]!='\r' && i<100 ; i++);
+    for (i=0 ; buffer[i]!='\n' && i<256 ; i++);
     buffer[i] = 0;
+
+	readcpt+=1;
+	printf("Read %d : %s\n", readcpt, buffer);
     //printf("%s", buffer);
-	printf("%s", buffer);
-	char * answer = malloc(sizeof(buffer)*100);
-	strncpy(buffer,answer,100);
+	//printf("%s",buffer);
+	char * answer = malloc(sizeof(buffer)*256);
+	strncpy(answer,buffer,256);
 	
+	//return answer;
 	return answer;
 }
 
@@ -240,51 +245,89 @@ void set_navigation()
 	g_signal_connect(p_button_return_card, "clicked", G_CALLBACK(change_page), p_listCardsPage);
 }
 
-void *handle_fingerprint_detection()
+void *handle_fingerprint_detection(void * arg)
 {
-	//g_print("{'type':'fingerprint', 'action':'scan','value':' '}");
-	serialport_write(main_fd, "{\"type\":\"fingerprint\",\"action\":\"scan\",\"value\":\"\"");
-	sleep(1);
-	getResponseCode();
-	char *statusmsg = "ok";
+	int fd = (int) arg;
+
+	serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"scan\",\"value\":\"\"\n");
+
+	// Message de demande de placement de doigt
+	char * msgvfirst =  getResponseCode(fd);
+	
+	// Vide ?
+	getResponseCode(fd);
+	
+	// Message OK ou KO
+	char * msgsecond = getResponseCode(fd);
+	json_error_t error;
+    char *statusmsg = json_string_value(json_object_get(json_loads(msgsecond, 0, &error), "statusmsg"));
+	
 	while (strcmp(statusmsg, "ok") != 0)
 	{
+		GtkLabel *p_lockLabel = gtk_builder_get_object(p_builder, "lock_label");
+		gtk_label_set_text(p_lockLabel, "Empreinte Incorrecte, Merci de réessayer");
 		// retry to scan
-		g_print("{'type':'fingerprint', 'action':'scan','value':' '}");
-		char *statusmsg = "not ok"; // get response
+		serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"scan\",\"value\":\"\"\n");
+
+		getResponseCode(fd);
+		getResponseCode(fd);
+		char * three = getResponseCode(fd);	
+
+
+
+		char *statusmsg = json_string_value(json_object_get(json_loads(msgsecond, 0, &error), "statusmsg"));
 	}
+	GObject *p_notebook = gtk_builder_get_object(p_builder, "Notebook");
+	change_page(p_notebook, gtk_builder_get_object(p_builder, "ListCardsPage"));
+	
 }
 
-void start_fingerprint_scan()
+void start_fingerprint_scan(int fd)
 {
 	pthread_t fingerprint_th;
-	pthread_create(&fingerprint_th, NULL, &handle_fingerprint_detection, NULL);
+	pthread_create(&fingerprint_th, NULL, &handle_fingerprint_detection, (void *)fd);
 }
 
 void lock();
-static void *handle_registering()
+static void *handle_registering(void * arg)
 {
-	char *status = "fp_release_finger_ok";
+	char *status = "wait";
 	int i = 0;
+
+	int fd = (int) arg;
+	//printf("%s\n",getResponseCode(fd));
 
 	while (strcmp(status, "ok") != 0)
 	{
 		GtkLabel *p_registerLabel = gtk_builder_get_object(p_builder, "registerLabel");
 		gtk_label_set_text(p_registerLabel, "Posez votre doigt puis relacher.");
-		g_print("posez votre doigt\n");
-		getResponseCode();
-		if (i < 3)
-		{
-			
-			i++;
-		}
-		else
-		{
-			status = "ok";
-		}
-	}
+		//g_print("posez votre doigt\n");
+		sleep(1);
+		char * resp = getResponseCode(fd);
+		
+		json_error_t error;
+		char * status =  json_string_value(json_object_get(json_loads(resp, 0, &error), "statusmsg"));
+		while (strcmp(status, "ok") != 0) {
+			getResponseCode(fd);
+			sleep(1);
+			json_error_t error_two;
+			char * resptwo = getResponseCode(fd);
+			char * statustwo =  json_string_value(json_object_get(json_loads(resptwo, 0, &error_two), "statusmsg"));
 
-	g_print("done\n");
+			if (strcmp(statustwo, "fp_place_finger") == 0) {
+				gtk_label_set_text(p_registerLabel, "Placez votre doigt sur le capteur");	
+			} else if (strcmp(statustwo, "fp_release_finger_ok") == 0) {
+				gtk_label_set_text(p_registerLabel, "Ôtez votre doigt du capteur");					
+			} else if (strcmp(statustwo, "ok") == 0) {
+				gtk_label_set_text(p_registerLabel, "OK");
+				break;	
+			}
+		}
+
+
+
+
+	}
 
 	GtkLabel *p_registerLabel = gtk_builder_get_object(p_builder, "registerLabel");
 	gtk_label_set_text(p_registerLabel, "Empreinte enregistré");
@@ -293,28 +336,31 @@ static void *handle_registering()
 	return NULL;
 }
 
-void lock()
+void lock(int fd)
 {
 
 	GObject *p_notebook = gtk_builder_get_object(p_builder, "Notebook");
 	// check if there's a fingerprint
 	// no fingerprint in DB, register one
 	// else, ask for a fingerprint
+	serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"get_nb\",\"value\":\"\"\n");
+	char * rep = getResponseCode(fd);
+
+	json_error_t error;
+	int response = json_object_get(json_loads(rep, 0, &error), "data");
+
 
 	// lecture
-	int response = 0;
 
 	if (response == 0)
 	{
 		// display register page
 		change_page(p_notebook, gtk_builder_get_object(p_builder, "registerPage"));
 
-		//g_print("{'type':'fingerprint', 'action':'register','value':' '}");
-		serialport_write(main_fd, "{\"type\":\"fingerprint\",\"action\":\"register\",\"value\":\"\"");
-
+		serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"register\",\"value\":\"\"}\n");
 		// wait for response in another thread to avoid blocking display
 		pthread_t register_th;
-		pthread_create(&register_th, NULL, &handle_registering, NULL);
+		pthread_create(&register_th, NULL, &handle_registering, (void *)fd);
 
 		// {"status": true, "message": "[FP] FP Found", "data": 1, "statusmsg":"ok"}
 
@@ -324,9 +370,10 @@ void lock()
 	{
 		// display unlock page
 		change_page(p_notebook, gtk_builder_get_object(p_builder, "unlockPage"));
+		start_fingerprint_scan(fd);
 	}
 
-	start_fingerprint_scan();
+	//start_fingerprint_scan(fd);
 }
 
 int main(int argc, char **argv)
@@ -334,8 +381,11 @@ int main(int argc, char **argv)
 	GError *p_err = NULL;
 
 	// Init Serial
-	main_fd = serialport_init("/dev/ttyACM0", 9600);
-	if (main_fd == -1) {printf("Unable to start serial !\n"); return -1;}
+	int fd = serialport_init("/dev/ttyACM0", 9600);
+	if (fd == -1) {printf("Unable to start serial !\n"); return -1;}
+	// attente, le temps que l'arduino s'init
+	sleep(3);
+	serialport_flush(fd);
 
 	/* Initialisation de GTK+ */
 	gdk_threads_init();
@@ -370,7 +420,7 @@ int main(int argc, char **argv)
 				gtk_list_box_prepend(p_ListCards, createButton(json_string_value(json_object_get(value, "name")), G_CALLBACK(setCardPage), value));
 			};
 
-			lock(); // handle fingerprints
+			lock(fd); // handle fingerprints
 
 			gtk_widget_show_all(GTK_WIDGET(p_win));
 			gtk_main();

@@ -46,12 +46,13 @@
               <placeholder/>
             </child>
             <child>
-              <object class="GtkLabel">
+              <object class="GtkLabel" id="lock_label">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Verrouiller
+                <property name="label" translatable="yes">Verrouillé
+
 Pour déverouiller, 
-utiliser le capteur d'empreinte</property>
+Utiliser le capteur d'empreinte</property>
               </object>
               <packing>
                 <property name="expand">False</property>
