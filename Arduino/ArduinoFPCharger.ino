@@ -165,7 +165,7 @@ void handleFP(String action, String value) {
     changeColorFP(value);
     return;
   } else if (action.equals("register")) {
-    Serial.println(PLACE);
+    //Serial.println(PLACE);
     int rep = 0;
     if (rep != 0) {
          Serial.print(found1);
