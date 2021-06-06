@@ -1,7 +1,13 @@
-SRCS=$(wildcard *.c)
-OBJS=$(SRCS:.c=.o)
+SRCS := $(wildcard src/*.c)
+OBJS := $(SRCS:.c=.o)
+
+CFLAGSA := `pkg-config --libs gtk+-3.0` -ljansson
+CFLAGSB := `pkg-config --cflags gtk+-3.0`
 
 %.o: %.c
-		gcc `pkg-config --cflags gtk+-3.0` -o $@ $< `pkg-config --libs gtk+-3.0` -ljansson
+	gcc $(CFLAGSB) -o $@ $< $(CFLAGSA)
 
 all: $(OBJS)
+
+clean:
+	rm -rf build
