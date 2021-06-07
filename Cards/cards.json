@@ -5,7 +5,19 @@
             "path": "test.jpg"
         },
         {
-            "name": "auchan2",
+            "name": "auuchan",
+            "path": "1.jpg"
+        },
+        {
+            "name": "auuuchan",
+            "path": "2.jpg"
+        },
+        {
+            "name": "carrefour",
+            "path": "3.jpg"
+        },
+        {
+            "name": "boulanger",
             "path": "test.jpg"
         }
     ]
