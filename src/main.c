@@ -159,6 +159,12 @@ char * getResponseCode(int fd) {
     buffer[i] = 0;
 
 	readcpt+=1;
+
+	if (buffer[0] == '\0') {
+		// On recommence la lecture
+		return getResponseCode(fd);
+	}
+
 	printf("Read %d : %s\n", readcpt, buffer);
     //printf("%s", buffer);
 	//printf("%s",buffer);
@@ -253,9 +259,11 @@ void *handle_fingerprint_detection(void * arg)
 
 	// Message de demande de placement de doigt
 	char * msgvfirst =  getResponseCode(fd);
+	printf("AIFOJFOEFOID\n");
+	printf("\n\n\nscan 1 : %s\n",msgvfirst);
 	
 	// Vide ?
-	getResponseCode(fd);
+	//getResponseCode(fd);
 	
 	// Message OK ou KO
 	char * msgsecond = getResponseCode(fd);
@@ -270,7 +278,7 @@ void *handle_fingerprint_detection(void * arg)
 		serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"scan\",\"value\":\"\"\n");
 
 		getResponseCode(fd);
-		getResponseCode(fd);
+		//getResponseCode(fd);
 		char * three = getResponseCode(fd);	
 
 
@@ -308,7 +316,7 @@ static void *handle_registering(void * arg)
 		json_error_t error;
 		char * status =  json_string_value(json_object_get(json_loads(resp, 0, &error), "statusmsg"));
 		while (strcmp(status, "ok") != 0) {
-			getResponseCode(fd);
+			//getResponseCode(fd);
 			sleep(1);
 			json_error_t error_two;
 			char * resptwo = getResponseCode(fd);
@@ -345,7 +353,7 @@ void lock(int fd)
 	// else, ask for a fingerprint
 	serialport_write(fd, "{\"type\":\"fingerprint\",\"action\":\"get_nb\",\"value\":\"\"\n");
 	char * rep = getResponseCode(fd);
-
+	printf("%s\n",rep);
 	json_error_t error;
 	int response = json_object_get(json_loads(rep, 0, &error), "data");
 
